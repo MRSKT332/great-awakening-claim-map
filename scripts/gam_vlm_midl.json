@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "DARK FLEET\nOFFENSIVE SPACE FLEET\nBeyond Solar System\nNAZI COMMAND STRUCTURE\nBREAKAWAY\nNAZIS\nORION SYNDICATE\nTONY\nRODRIGUEZ\nDark Fleet Whistleblower\nREVERSE-\nENGINEERING\nUFOS\nGARY MCKINNON\nHacker discovered\nSOLAR WARDEN\nNon-Human Roster\nNORTHRUP\nGRUMMAN\nMAJESTIC\nMJ-12\nBOBBY RAY INMAN\nCosmic\nDisclosure\nICC\nINTERPLANETARY\nCORPORATE\nCONGLOMERATE\n(Off-Planet Aerospace Corporations)\nESTABLISHED INTERGALACTIC TRADE WITH\n900+ EXTRATERRESTRIAL RACES\nUSAF\nMILITARY INDUSTRIAL COMPLEX\nSECRET SPACE PROGRAM\n(MICSSP)\n$100\nTOILET SEATS\nTR3B\nServicing Low-Earth-Orbit\nSpace Stations\nCOMPARTMENTALIZED\nPROGRAMS\nPleiadian\nGuidance\nApollo Moon Landings\nWILLIAM\nTOMPKINS\nSSP WHISTLEBLOWER\nDOUGLAS\nAIRCRAFT\nTRW\nNORTH\nAMERICAN\nAVIATION\nBATTLE\nOF\nLOS ANGELES\nFEBRUARY 1942\nSECRET SPACE\nPROGRAM\nRESEARCHERS\nDavid Wilcock, Dr. Michael Salla, Gaia.com\nKerry Cassidy (PROJECT CAMELOT), Dr. Steven Greer,\nRichard C. Hoagland, Jay Sather, Billy Carson, David Icke,\nLinda Moulton Howe, Laura Eisenhower, Jordan Maxwell,\nGeorge Noory, Art Bell, Jay Weidner, Richard Dolan, et al.\nHOLISTIC\nHEALING\nCancer Cured\nRIFE\nMACHINE\n\"If you want to find the\nsecrets of the universe,\nthink in terms of energy,\nfrequency and vibration.\"\nNIKOLA\nACTIVATOR\nX\n\"Rat Fish Liver Oil\nDecalcifies 3rd Eye\"\nORGONE\nWilhelm Reich\nSOUND\nHEALING",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783921832,
+  "id": "20260713135018061f258beb76459d",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260713135018061f258beb76459d",
+  "usage": {
+    "completion_tokens": 464,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2671,
+    "prompt_tokens_details": {
+      "cached_tokens": 6
+    },
+    "total_tokens": 3135
+  }
+}

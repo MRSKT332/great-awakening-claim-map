@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The Oversoul\nPineal Gland\nDecalcify & Activate\nAkashic Records\nDrunvalo Melchizedek\nStar Merkaba\nVehicle\nAstral Travellers\nLucid Dream\nPrana\nBreath-Arian\nFasting\nPsychedelia\nL.S.D.\nThe Archaic Revival\nAyahuasca\nShamans\nCommunication with Ancestral Spirits\nFairies\nMermaids\nDinosaurs\nDarwinism\nEvolution Propaganda (Stepped Evolution)",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783921711,
+  "id": "202607131348182e8fc991529c49b5",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202607131348182e8fc991529c49b5",
+  "usage": {
+    "completion_tokens": 114,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4015,
+    "prompt_tokens_details": {
+      "cached_tokens": 6
+    },
+    "total_tokens": 4129
+  }
+}

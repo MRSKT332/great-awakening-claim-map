@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "NASA: DARK MISSION\nRichard C. Hoagland\nMike Bara\nSTANLEY KUBRICK\n\"The Shining\"\nNASA COVERUPS\nPHOTO MANIPULATION\nLunar & Martian Anomalies\n\"The MOON IS A SOUL-CATCHER\"\n-John Lear\n\"SSP deep lunar mining operations reveal ancient civilizations and advanced technology.\"\n432hz\nCRYSTALS\nCymatics\nThe OVERSOUL\nPINEAL GLAND",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783921837,
+  "id": "202607131350331032afd73ee54ae4",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202607131350331032afd73ee54ae4",
+  "usage": {
+    "completion_tokens": 101,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2671,
+    "prompt_tokens_details": {
+      "cached_tokens": 7
+    },
+    "total_tokens": 2772
+  }
+}

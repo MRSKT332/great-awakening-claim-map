@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Champ Parinya\nGreatAwakeningMap.co\nV9/7/2018",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783921818,
+  "id": "20260713135013a98fb8e0703e470d",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260713135013a98fb8e0703e470d",
+  "usage": {
+    "completion_tokens": 21,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 5321,
+    "prompt_tokens_details": {
+      "cached_tokens": 7
+    },
+    "total_tokens": 5342
+  }
+}

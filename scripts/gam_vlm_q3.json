@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "HOLISTIC HEALING\nCancer Cured\nRIFE MACHINE\n\"If you want to find the secrets of the universe, think in terms of energy, frequency and vibration.\"\nNIKOLA TESLA\nWIRE-LESS ENERGY\nSOLAR SYSTEM\nGLOBAL WARMING\nALL PLANETS IN THE SOLAR SYSTEM ARE HEATING UP\nBLACKMAIL\nLOOSH\nDARK WEB\nMASS SHOOTINGS\nDRUG TRAFFICKING\nCIA WEAPONS TRAFFICKING\nWEAPONIZED FOOD\nSHEEP ASLEEP\nZzz\nRED-PILL THE MASSES\nESCAPE THE MATRIX\nACTIVATOR X\n\"Rat Fish Liver Oil Decalcifies 3rd Eye\"\nORGONE\nWilhelm Reich\nSOUND HEALING\nANNUNAKI\n\"Those from heaven to earth came.\"\nORGANIC FOOD\nNON GMO\nWORLD GOLD HEIST\nSAVE THE CHILDREN\nSEALED INDICTMENTS\nClintons &\nRothchilds &\nGlobal Elite\nPedophiles\nRitual Sacrifices\nNXIVM\nChild Trafficking\nEPSTEIN ISLAND\nAdrenochrome\nUnderground Sex Trafficking Tunnels\nCORPORATOCRACY\nENGINEERED DISEASES\nKILL YOUR T.V.\nH.F.C.S.\n\"1984\"\nFLAT EARTH PSYOP\nWHITE DRAGON SOCIETY\nWTC7\nCONTROLLED DEMOLITION\n\"A MISSILE HIT THE PENTAGON\"\nTHE EARTH ALLIANCE\nARREST THE CABAL / RELEASE FREE ENERGY\n4D Chess\nTHE STORM\nQ ANON\nHigh-Rank Military Generals\nANONYMOUS MEME WARS\nPsychological Thought Bombs\nDRAIN THE SWAMP\nGEOTUS\n\"Hear all. See all.\"\nWHITE HATS\nQMAP\nPLEIADIAN GUIDANCE\n8chan\n4chan\nN. KOREA\nCIA OUSTED\nPEACE\nCREATION OF \"SPACE FORCE\"\nTRUMP\n#WWG1WGA\nWhere We Go One We Go All\nANONS\nPATRIOTS\nARREST PEDOPHILES\nFOLLOW THE WHITE RABBIT\nEND THE FED\nTRUST THE PLAN\nTRIBUNALS\nCERN\nOccult Rituals\nCOUNCIL OF 200\nCORRUPT ELITE CONTROL GROUP\nGLOBAL SURVEILLANCE GRID\nCIA\n\"Clowns in America\"\nFacebook, CNN, Google, Amazon\nCABAL\nDEEP ST\nSECRET S",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783921744,
+  "id": "2026071313484633695fdb048c4a3b",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "2026071313484633695fdb048c4a3b",
+  "usage": {
+    "completion_tokens": 537,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4015,
+    "prompt_tokens_details": {
+      "cached_tokens": 6
+    },
+    "total_tokens": 4552
+  }
+}
