@@ -135,7 +135,19 @@ export default function ChatPanel({ open, onClose, currentNodeId }: Props) {
       });
 
       if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
+        // Handle rate limiting gracefully
+        if (res.status === 429) {
+          let retryAfter = "a moment";
+          try {
+            const data = await res.json();
+            if (data.retryAfter) retryAfter = `${data.retryAfter} seconds`;
+          } catch {}
+          throw new Error(`You're asking questions too fast. Please wait ${retryAfter} and try again.`);
+        }
+        if (res.status === 413) {
+          throw new Error("Your question is too long. Please shorten it and try again.");
+        }
+        throw new Error("The AI service is busy. Please try again.");
       }
 
       // Phase 3: Stream the response
