@@ -1,77 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { NODES, CATEGORY_MAP } from "@/lib/gam";
+import { findRelevantNodes, buildSystemPrompt } from "@/lib/gam/rag";
 import type { GAMNode } from "@/lib/gam/types";
-import { X, Send, Sparkles, Bot, User, Loader2 } from "lucide-react";
+import {
+  X, Send, Sparkles, Bot, User, Loader2, AlertCircle, RefreshCw,
+  Search, Brain, Zap, Clock,
+} from "lucide-react";
 
 interface Message {
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant";
   content: string;
+  isError?: boolean;
 }
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** When a node is selected, the chat is pre-seeded with that node's context. */
   currentNodeId?: string | null;
 }
 
-/**
- * Pollinations AI chat with full node-data context (RAG-style).
- *
- * The entire node dataset (id, label, category, description, links, sources)
- * is compiled into a compact system prompt that is sent with every chat
- * request. This gives the Pollinations model full knowledge of every node
- * on the map, so it can answer questions about any topic in depth.
- *
- * Pollinations text API:  https://text.pollinations.ai/
- */
+type LoadingPhase = "idle" | "searching" | "sending" | "streaming" | "done" | "error";
+
+const PHASE_LABELS: Record<LoadingPhase, { label: string; sublabel: string; icon: typeof Loader2 }> = {
+  idle:      { label: "", sublabel: "", icon: Loader2 },
+  searching: { label: "Searching knowledge base…", sublabel: "Finding relevant topics", icon: Search },
+  sending:   { label: "Connecting to AI…", sublabel: "Usually takes 2-5 seconds", icon: Zap },
+  streaming: { label: "AI is responding…", sublabel: "Streaming answer in real-time", icon: Brain },
+  done:      { label: "", sublabel: "", icon: Loader2 },
+  error:     { label: "Connection failed", sublabel: "Click retry or try again", icon: AlertCircle },
+};
+
 export default function ChatPanel({ open, onClose, currentNodeId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<LoadingPhase>("idle");
+  const [elapsed, setElapsed] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Build the system prompt once (compact representation of all 284 nodes)
-  const systemPrompt = useRef<string>("");
-  if (!systemPrompt.current) {
-    const nodeContext = NODES.map((n) => {
-      const cat = CATEGORY_MAP[n.category];
-      const related = (n.links || [])
-        .map((id) => NODES.find((x) => x.id === id)?.label || id)
-        .slice(0, 8)
-        .join(", ");
-      const sources = (n.sources || []).map((s) => s.label).join("; ");
-      return `### ${n.label} [${cat.label}]\n${n.desc}${related ? `\nRelated: ${related}` : ""}${sources ? `\nSources: ${sources}` : ""}`;
-    }).join("\n\n");
-
-    systemPrompt.current = `You are the AI guide for the "Great Awakening Claim Map" — an interactive 3D node graph mapping the claims of the "Great Awakening Map" conspiracy infographic (a 2018 poster by Tiff Fitzgibbon / Champ Parinya).
-
-Your role: answer questions about ANY of the 284 topics on the map, in depth, drawing ONLY from the data provided below. Be helpful, neutral, and detailed.
-
-FRAMING RULES (CRITICAL):
-- Every answer is written from INSIDE the narrative — you describe what the conspiracy / claim / entity ALLEGES, who promotes it, where it sits in the larger map.
-- Do NOT fact-check. Do NOT debunk. Do NOT add 'mainstream media says...' counterpoints.
-- Do NOT endorse the claims either. Just describe what they assert, neutrally.
-- When asked "is X true?" respond with "Within the narrative, X is described as..." and explain the claim — do not confirm or deny its real-world truth.
-- When asked about connections between topics, explain how the narrative links them.
-- When asked about a topic not in the data, say "That topic is not in the Great Awakening Map dataset" and suggest the closest related topic that IS in the data.
-
-FORMAT:
-- Be detailed but readable. Use short paragraphs. Use **bold** for node names. Use bullet lists for related topics.
-- When you mention a topic that exists as a node, you can suggest the user click it by saying "See: [Node Name]".
-- If the user asks about the map itself (how to use it, what categories exist), answer from the categories below.
-
-CATEGORIES ON THE MAP:
-${NODES.filter((n, i, arr) => arr.findIndex((x) => x.category === n.category) === i)
-  .map((n) => `- ${CATEGORY_MAP[n.category].label} (${CATEGORY_MAP[n.category].color}) — ${CATEGORY_MAP[n.category].blurb}`)
-  .join("\n")}
-
-FULL NODE DATA (284 nodes — use this as your knowledge base):
-${nodeContext}`;
-  }
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Seed initial greeting
   useEffect(() => {
@@ -79,7 +48,7 @@ ${nodeContext}`;
       setMessages([
         {
           role: "assistant",
-          content: "Hi! I'm the Great Awakening map guide. Ask me anything about any of the 284 topics on the map — QAnon, the Secret Space Program, Reptilians, Atlantis, the Great Solar Flash, Pineal Gland, anything. I have the full dataset as context and will explain what each conspiracy alleges in depth.",
+          content: "Hi! I'm the Great Awakening map guide. Ask me about any of the 284 topics — QAnon, the Secret Space Program, Reptilians, Atlantis, the Great Solar Flash, the Pineal Gland, anything. I'll explain what each conspiracy alleges, neutrally.\n\n💡 **Tip:** I search the map's knowledge base for relevant topics before each answer, so responses are fast and focused.",
         },
       ]);
     }
@@ -95,19 +64,18 @@ ${nodeContext}`;
       ...prev,
       {
         role: "user",
-        content: `I'm looking at the "${node.label}" node (${cat.label}). Tell me more about this — what's the conspiracy, who promotes it, and how does it connect to the rest of the map?`,
+        content: `I'm looking at the "${node.label}" node (${cat.label}). Tell me more — what's the conspiracy, who promotes it, and how does it connect to the rest of the map?`,
       },
     ]);
-    // Auto-send
-    setTimeout(() => send(node), 100);
+    setTimeout(() => send(undefined, node), 200);
   }, [currentNodeId, open]);
 
-  // Auto-scroll to bottom on new message
+  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, loading]);
+  }, [messages, phase]);
 
   // Focus input when opened
   useEffect(() => {
@@ -116,48 +84,166 @@ ${nodeContext}`;
     }
   }, [open]);
 
-  const send = async (contextNode?: GAMNode) => {
+  // Timer for elapsed seconds
+  useEffect(() => {
+    if (phase === "searching" || phase === "sending" || phase === "streaming") {
+      setElapsed(0);
+      timerRef.current = setInterval(() => {
+        setElapsed((e) => e + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [phase]);
+
+  const send = useCallback(async (contextNode?: GAMNode, isRetry = false) => {
     const userMsg = input.trim() || (contextNode ? `Tell me about "${contextNode.label}".` : "");
-    if (!userMsg || loading) return;
+    if (!userMsg || phase === "searching" || phase === "sending" || phase === "streaming") return;
+
     setInput("");
+    setRetryCount(0);
     const newMessages: Message[] = [...messages, { role: "user", content: userMsg }];
     setMessages(newMessages);
-    setLoading(true);
+
+    // Phase 1: Search knowledge base (RAG)
+    setPhase("searching");
+    // Small delay to show the searching phase (also gives the UI time to render)
+    await new Promise((r) => setTimeout(r, 300));
+
+    const relevantNodes = findRelevantNodes(userMsg, 15);
+    const systemPrompt = buildSystemPrompt(relevantNodes);
+
+    // Phase 2: Send to AI
+    setPhase("sending");
+
+    const apiMessages = [
+      { role: "system", content: systemPrompt },
+      ...newMessages.map((m) => ({ role: m.role, content: m.content })),
+    ];
 
     try {
-      // Build the full message array with system prompt
-      const apiMessages = [
-        { role: "system", content: systemPrompt.current },
-        ...newMessages.map((m) => ({ role: m.role, content: m.content })),
-      ];
-
-      // Pollinations text API — called via our server-side proxy to avoid
-      // the Cloudflare Turnstile requirement on browser requests.
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, stream: true }),
       });
 
-      if (!res.ok) throw new Error(`Pollinations error: ${res.status}`);
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "I couldn't generate a response. Please try again.";
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
 
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      // Phase 3: Stream the response
+      setPhase("streaming");
+
+      // Add an empty assistant message that we'll fill as chunks arrive
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response stream");
+
+      const decoder = new TextDecoder();
+      let fullContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        // Parse SSE chunks — Pollinations sends OpenAI-compatible SSE
+        const lines = chunk.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content;
+              if (delta) {
+                fullContent += delta;
+                // Update the last message with the accumulated content
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    role: "assistant",
+                    content: fullContent,
+                  };
+                  return updated;
+                });
+              }
+            } catch {
+              // Skip non-JSON lines
+            }
+          }
+        }
+      }
+
+      // If we got no content, show a fallback
+      if (!fullContent) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: "I couldn't generate a response. Please try rephrasing your question.",
+            isError: true,
+          };
+          return updated;
+        });
+      }
+
+      setPhase("done");
+      setTimeout(() => setPhase("idle"), 300);
     } catch (err: any) {
+      // Retry up to 2 times on failure
+      if (retryCount < 2) {
+        setRetryCount((c) => c + 1);
+        setPhase("sending");
+        // Wait a moment before retry
+        await new Promise((r) => setTimeout(r, 1000));
+        // Restore the input and messages, then retry
+        setMessages(newMessages.slice(0, -1)); // remove the failed user msg (will be re-added)
+        setInput(userMsg);
+        setTimeout(() => send(undefined, undefined), 100);
+        return;
+      }
+
+      setPhase("error");
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `Sorry, I couldn't reach the AI service (${err.message}). The Pollinations API may be rate-limited or temporarily unavailable. Please try again in a moment.`,
+          content: `Sorry, I couldn't reach the AI service after ${retryCount + 1} attempts (${err.message}). The free AI service may be busy right now. Please try again in a moment — the service usually recovers within a few seconds.`,
+          isError: true,
         },
       ]);
-    } finally {
-      setLoading(false);
+    }
+  }, [input, messages, phase, retryCount]);
+
+  const retry = () => {
+    // Remove the last error message
+    setMessages((prev) => {
+      const filtered = prev.filter((m) => !m.isError);
+      return filtered;
+    });
+    setPhase("idle");
+    setRetryCount(0);
+    // Resend the last user message
+    const lastUser = [...messages].reverse().find((m) => m.role === "user" && !m.isError);
+    if (lastUser) {
+      setInput(lastUser.content);
+      setTimeout(() => send(), 100);
     }
   };
 
   if (!open) return null;
+
+  const PhaseIcon = PHASE_LABELS[phase].icon;
+  const isLoading = phase === "searching" || phase === "sending" || phase === "streaming";
 
   return (
     <div
@@ -187,7 +273,7 @@ ${nodeContext}`;
           <span className="font-bold text-[15px] text-white">Ask the Map</span>
         </div>
         <p className="text-[11.5px] text-[#8a8ba3] pr-8 leading-relaxed">
-          AI guide powered by Pollinations. Has the full 284-node dataset as context. Describes what each conspiracy alleges — neutrally, no fact-checking.
+          AI guide with RAG search across 284 topics. Describes what each conspiracy alleges — neutrally, no fact-checking.
         </p>
       </div>
 
@@ -198,37 +284,79 @@ ${nodeContext}`;
             <div
               className="w-7 h-7 rounded-lg grid place-items-center shrink-0 mt-0.5"
               style={{
-                background: m.role === "user" ? "#ff6b4a" : "linear-gradient(135deg, #8f6bff, #4affa0)",
+                background: m.role === "user"
+                  ? "#ff6b4a"
+                  : m.isError ? "#ef4444" : "linear-gradient(135deg, #8f6bff, #4affa0)",
               }}
             >
-              {m.role === "user" ? <User size={13} className="text-white" /> : <Bot size={13} className="text-white" />}
+              {m.role === "user"
+                ? <User size={13} className="text-white" />
+                : m.isError ? <AlertCircle size={13} className="text-white" /> : <Bot size={13} className="text-white" />
+              }
             </div>
             <div
-              className={`max-w-[80%] rounded-xl px-3.5 py-2.5 text-[13px] leading-[1.6] whitespace-pre-wrap`}
+              className={`max-w-[82%] rounded-xl px-3.5 py-2.5 text-[13px] leading-[1.6] whitespace-pre-wrap break-words`}
               style={{
-                background: m.role === "user" ? "#ff6b4a15" : "#1a1c28",
-                border: `1px solid ${m.role === "user" ? "#ff6b4a44" : "#262838"}`,
+                background: m.role === "user"
+                  ? "#ff6b4a15"
+                  : m.isError ? "#ef444415" : "#1a1c28",
+                border: `1px solid ${
+                  m.role === "user"
+                    ? "#ff6b4a44"
+                    : m.isError ? "#ef444444" : "#262838"
+                }`,
                 color: "#e7e6f0",
               }}
             >
               {m.content}
+              {/* Show typing cursor while streaming */}
+              {phase === "streaming" && i === messages.length - 1 && m.role === "assistant" && (
+                <span className="inline-block w-2 h-4 ml-0.5 bg-[#4affa0] animate-pulse align-middle" />
+              )}
             </div>
           </div>
         ))}
-        {loading && (
+
+        {/* Loading indicator */}
+        {isLoading && (
           <div className="flex gap-2.5">
             <div
               className="w-7 h-7 rounded-lg grid place-items-center shrink-0"
               style={{ background: "linear-gradient(135deg, #8f6bff, #4affa0)" }}
             >
-              <Bot size={13} className="text-white" />
+              <PhaseIcon size={13} className={`text-white ${phase !== "streaming" ? "animate-spin" : "animate-pulse"}`} />
             </div>
             <div
-              className="rounded-xl px-4 py-3 flex items-center gap-2 text-[12px] text-[#8a8ba3]"
+              className="rounded-xl px-4 py-3 space-y-1"
               style={{ background: "#1a1c28", border: "1px solid #262838" }}
             >
-              <Loader2 size={13} className="animate-spin" /> Thinking...
+              <div className="flex items-center gap-2 text-[12.5px] text-white font-medium">
+                {PHASE_LABELS[phase].label}
+                {/* Animated dots */}
+                <span className="flex gap-0.5">
+                  <span className="w-1 h-1 rounded-full bg-[#4affa0] animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1 h-1 rounded-full bg-[#4affa0] animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1 h-1 rounded-full bg-[#4affa0] animate-bounce" style={{ animationDelay: "300ms" }} />
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10.5px] text-[#8a8ba3]">
+                <Clock size={10} />
+                {PHASE_LABELS[phase].sublabel}
+                {elapsed > 0 && <span className="ml-1 text-[#6a6b85]">· {elapsed}s elapsed</span>}
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* Error retry button */}
+        {phase === "error" && (
+          <div className="flex justify-center">
+            <button
+              onClick={retry}
+              className="flex items-center gap-1.5 text-[12px] px-3 py-2 rounded-md border border-[#262838] text-[#cfcfe0] hover:bg-white/5 transition"
+            >
+              <RefreshCw size={13} /> Retry
+            </button>
           </div>
         )}
       </div>
@@ -246,18 +374,22 @@ ${nodeContext}`;
                 send();
               }
             }}
-            placeholder="Ask about any topic on the map..."
+            placeholder="Ask about any topic on the map…"
             className="flex-1 bg-[#14151f] border border-[#262838] text-white text-[13px] px-3.5 py-2.5 rounded-lg outline-none focus:border-[#8f6bff]/60 transition"
+            disabled={isLoading}
           />
           <button
             onClick={() => send()}
-            disabled={loading || !input.trim()}
+            disabled={isLoading || !input.trim()}
             className="w-10 h-10 rounded-lg grid place-items-center text-white transition disabled:opacity-40"
             style={{ background: "linear-gradient(135deg, #8f6bff, #4affa0)" }}
             aria-label="Send"
           >
-            <Send size={15} />
+            {isLoading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
           </button>
+        </div>
+        <div className="text-[10px] text-[#6a6b85] mt-2 text-center">
+          Powered by Pollinations AI · Free, no signup · Responses typically take 3-10 seconds
         </div>
       </div>
     </div>

@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "The bottom portion of the side panel has a \"Copy shareable link\" button. There is no YouTube video thumbnail with a red play button visible, and no video title is shown.  \n\nNo, no video thumbnail/title visible",
+        "content": "The bottom portion of the side panel includes a YouTube search card with a red play button. The text shown is \"Nikola Tesla\" (above the play button) and \"SEARCH YOUTUBE\" (below it), plus \"Click to search — opens in a new tab\" underneath.",
         "role": "assistant"
       }
     }
   ],
-  "created": 1783968421,
-  "id": "20260714024659d39167e641e84abc",
+  "created": 1783969621,
+  "id": "2026071403065768816adbec6e49d5",
   "model": "glm-4.6v",
   "object": "chat.completion",
-  "request_id": "20260714024659d39167e641e84abc",
+  "request_id": "2026071403065768816adbec6e49d5",
   "usage": {
-    "completion_tokens": 48,
+    "completion_tokens": 60,
     "completion_tokens_details": {
       "reasoning_tokens": 0
     },
-    "prompt_tokens": 1011,
+    "prompt_tokens": 1008,
     "prompt_tokens_details": {
       "cached_tokens": 5
     },
-    "total_tokens": 1059
+    "total_tokens": 1068
   }
 }

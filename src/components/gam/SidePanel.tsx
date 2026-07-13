@@ -5,7 +5,7 @@ import type { GAMNode } from "@/lib/gam/types";
 import { CATEGORY_MAP } from "@/lib/gam/groups";
 import { NODE_MAP } from "@/lib/gam";
 import { NODE_IMAGES } from "@/lib/gam/images";
-import { YOUTUBE_VIDEOS } from "@/lib/gam/youtube";
+import { youtubeSearchUrlSmart } from "@/lib/gam/youtube";
 import { X, Download, ExternalLink, Link2, Tag, Play, Image as ImageIcon, Sparkles, Star, Youtube } from "lucide-react";
 
 interface Props {
@@ -19,13 +19,6 @@ interface Props {
 
 export default function SidePanel({ node, onClose, onSelect, onAskAI, bookmarks, onToggleBookmark }: Props) {
   const [copied, setCopied] = useState(false);
-  const [ytExpanded, setYtExpanded] = useState(false);
-
-  // Reset YouTube embed state when node changes
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setYtExpanded(false);
-  }, [node?.id]);
 
   if (!node) return null;
   const cat = CATEGORY_MAP[node.category];
@@ -216,70 +209,32 @@ export default function SidePanel({ node, onClose, onSelect, onAskAI, bookmarks,
           </div>
         )}
 
-        {/* YouTube video */}
-        {(() => {
-          const yt = node.youtubeId
-            ? { id: node.youtubeId, title: node.label, channel: "" }
-            : YOUTUBE_VIDEOS[node.id];
-          if (yt) {
-            return (
-              <div>
-                <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8a8ba3] font-semibold mb-2 flex items-center gap-1.5">
-                  <Youtube size={11} className="text-[#ff4a4a]" /> Related video
-                  {yt.channel && <span className="text-[#6a6b85] normal-case tracking-normal ml-1">— {yt.channel}</span>}
-                </h3>
-                {ytExpanded ? (
-                  <div className="rounded-lg overflow-hidden border border-[#262838] bg-black aspect-video">
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${yt.id}`}
-                      title={`${node.label} — related video`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setYtExpanded(true)}
-                    className="w-full rounded-lg overflow-hidden border border-[#262838] bg-black/30 hover:border-[#ff4a4a]/50 transition group"
-                  >
-                    <div className="relative aspect-video bg-black grid place-items-center">
-                      <img
-                        src={`https://img.youtube.com/vi/${yt.id}/hqdefault.jpg`}
-                        alt={yt.title}
-                        className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 transition"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                      />
-                      <div className="relative z-10 w-14 h-14 rounded-full grid place-items-center" style={{ background: "#ff0000" }}>
-                        <Play size={22} className="text-white ml-1" fill="currentColor" />
-                      </div>
-                    </div>
-                    <div className="px-3 py-2 text-[11.5px] text-[#cfcfe0] text-left">{yt.title}</div>
-                  </button>
-                )}
+        {/* YouTube — reliable search link card */}
+        <div>
+          <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8a8ba3] font-semibold mb-2 flex items-center gap-1.5">
+            <Youtube size={11} className="text-[#ff4a4a]" /> Watch on YouTube
+          </h3>
+          <a
+            href={youtubeSearchUrlSmart(node.label, node.category)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-lg overflow-hidden border border-[#262838] hover:border-[#ff4a4a]/50 transition group"
+          >
+            <div className="relative aspect-video bg-gradient-to-br from-[#1a1c28] to-[#0e0f17] grid place-items-center">
+              <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at center, #ff000022, transparent)" }} />
+              <div className="relative z-10 flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full grid place-items-center" style={{ background: "#ff0000" }}>
+                  <Play size={20} className="text-white ml-0.5" fill="currentColor" />
+                </div>
+                <span className="text-[10px] text-[#8a8ba3] uppercase tracking-wider">Search YouTube</span>
               </div>
-            );
-          }
-          return (
-            <div>
-              <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8a8ba3] font-semibold mb-2 flex items-center gap-1.5">
-                <Youtube size={11} className="text-[#ff4a4a]" /> Watch on YouTube
-              </h3>
-              <a
-                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(node.label + " conspiracy explained")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-[12.5px] text-[#ff6b4a] hover:underline"
-              >
-                <span className="w-7 h-7 rounded grid place-items-center" style={{ background: "#ff000022" }}>
-                  <Play size={13} className="text-[#ff4a4a]" fill="currentColor" />
-                </span>
-                Search YouTube for &quot;{node.label}&quot;
-              </a>
             </div>
-          );
-        })()}
+            <div className="px-3 py-2.5 bg-[#14151f]">
+              <div className="text-[12px] text-[#cfcfe0] font-medium">{node.label}</div>
+              <div className="text-[10px] text-[#6a6b85] mt-0.5">Click to search — opens in a new tab</div>
+            </div>
+          </a>
+        </div>
       </div>
 
       {/* Footer — download / share */}
