@@ -11,6 +11,13 @@ interface Props {
   activeCategories: Set<string>;
   searchQuery: string;
   onSelect: (node: GAMNode) => void;
+  /** Imperative ref handle for parent to call resetView / focusNode. */
+  onReady?: (api: GraphAPI) => void;
+}
+
+export interface GraphAPI {
+  resetView: () => void;
+  focusNode: (id: string) => void;
 }
 
 /**
@@ -28,6 +35,7 @@ export default function Graph3D({
   activeCategories,
   searchQuery,
   onSelect,
+  onReady,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
@@ -118,7 +126,11 @@ export default function Graph3D({
         .linkDirectionalParticles(0)
         .linkDirectionalArrowLength(0)
         .linkCurvature(0.06)
-        .cooldownTicks(300)
+        // STABILITY: settle fast and stay still
+        .cooldownTicks(120)
+        .d3AlphaDecay(0.08)   // higher = cools down faster
+        .d3VelocityDecay(0.55) // higher = more friction = less jitter
+        .warmupTicks(60)       // pre-compute layout before first render
         .onNodeClick((node: any) => {
           onSelectRef.current(node.__node as GAMNode);
           const distance = 220;
@@ -134,24 +146,55 @@ export default function Graph3D({
           node.fy = node.y;
           node.fz = node.z;
         })
+        .onEngineStop(() => {
+          // Fully freeze nodes once the simulation settles — no more drifting
+          const data = graph.graphData();
+          data.nodes.forEach((n: any) => {
+            n.vx = 0; n.vy = 0; n.vz = 0;
+          });
+        })
         .onBackgroundClick(() => {
           // Release all pinned nodes on background click
           const data = graph.graphData();
           data.nodes.forEach((n: any) => { n.fx = null; n.fy = null; n.fz = null; });
         });
 
-      // Tune forces for 284 nodes
+      // GENTLE forces for 284 nodes — minimal floating
       const charge = graph.d3Force("charge");
-      if (charge) charge.strength(-220);
+      if (charge) charge.strength(-90).distanceMax(320);  // was -220, way too strong
       const link = graph.d3Force("link");
-      if (link) { link.distance(45); link.strength(0.12); }
+      if (link) { link.distance(38); link.strength(0.18); }
       const center = graph.d3Force("center");
-      if (center) center.strength(0.04);
+      if (center) center.strength(0.003);  // very gentle pull to center
+      // Remove the default x/y/z forces that cause drifting
+      graph.d3Force("x", null);
+      graph.d3Force("y", null);
+      graph.d3Force("z", null);
 
       graphRef.current = graph;
 
-      // Initial camera tilt
-      graph.cameraPosition({ z: 600 });
+      // Initial camera position — tilted top-down for a nice overview
+      graph.cameraPosition({ x: 0, y: -150, z: 700 });
+
+      // Expose API to parent for reset / focus controls
+      if (onReady) {
+        onReady({
+          resetView: () => {
+            graph.cameraPosition({ x: 0, y: -150, z: 700 }, { x: 0, y: 0, z: 0 }, 800);
+          },
+          focusNode: (id: string) => {
+            const data = graph.graphData();
+            const target = data.nodes.find((n: any) => n.id === id);
+            if (!target) return;
+            const distance = 220;
+            graph.cameraPosition(
+              { x: target.x + distance, y: target.y + distance * 0.4, z: target.z + distance },
+              { x: target.x, y: target.y, z: target.z },
+              900,
+            );
+          },
+        });
+      }
 
       // Re-render colors when props change (without rebuilding the graph)
       (graph as any).__refreshColors = () => {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, X, Info, Download, FileDown, Sparkles } from "lucide-react";
-import { CATEGORIES, NODES, LINKS } from "@/lib/gam";
+import { Search, X, Info, FileDown, Sparkles, ChevronDown } from "lucide-react";
+import { CATEGORIES, NODES } from "@/lib/gam";
 
 interface Props {
   search: string;
@@ -22,24 +22,6 @@ export default function TopBar({
   onOpenChat,
 }: Props) {
   const [showLegend, setShowLegend] = useState(true);
-
-  const downloadWholeMap = () => {
-    const data = {
-      generated: new Date().toISOString(),
-      source: "Great Awakening Map — interactive node graph",
-      nodes: NODES,
-      links: LINKS,
-      categories: CATEGORIES,
-      note: "All descriptions are written neutrally and explain what each conspiracy / claim / entity alleges — they do not endorse or debunk the claims.",
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "great-awakening-map.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div
@@ -82,9 +64,7 @@ export default function TopBar({
 
         {/* Stats badge */}
         <div className="hidden md:flex items-center gap-2 text-[11px] text-[#8a8ba3] px-2.5 py-1 rounded-md border border-[#262838] bg-[#14151f]/50">
-          <span className="text-white font-semibold">{NODES.length}</span> nodes
-          <span className="opacity-40">·</span>
-          <span className="text-white font-semibold">{LINKS.length}</span> links
+          <span className="text-white font-semibold">{NODES.length}</span> topics
         </div>
 
         {/* Actions */}
@@ -115,18 +95,12 @@ export default function TopBar({
           <Info size={15} />
         </button>
         <button
-          onClick={downloadWholeMap}
-          className="hidden sm:grid w-8 h-8 rounded-md place-items-center text-[#8a8ba3] hover:text-white hover:bg-white/5 transition"
-          aria-label="Download entire map as JSON"
-          title="Download entire map as JSON"
-        >
-          <Download size={14} />
-        </button>
-        <button
           onClick={() => setShowLegend((s) => !s)}
-          className="text-[11px] uppercase tracking-wider text-[#8a8ba3] hover:text-white px-2.5 py-1.5 rounded-md border border-[#262838] hover:border-[#4a4d65] transition"
+          className="flex items-center gap-1 text-[11px] uppercase tracking-wider text-[#8a8ba3] hover:text-white px-2.5 py-1.5 rounded-md border border-[#262838] hover:border-[#4a4d65] transition"
+          title="Toggle category legend"
         >
           {showLegend ? "Hide" : "Show"} legend
+          <ChevronDown size={11} className={showLegend ? "rotate-180 transition" : "transition"} />
         </button>
       </div>
 
