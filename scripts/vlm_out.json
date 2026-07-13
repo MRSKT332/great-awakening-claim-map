@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The screenshot displays a **\"Great Awakening — claim map\"** interface with two main sections:  \n\n### 1. Left Section: 3D Graph  \n- A dark-themed, interactive 3D graph (network visualization) with colored nodes (bubbles) and labeled edges, representing interconnected claims.  \n- Nodes are color-coded by categories (e.g., \"Core / Umbrella,\" \"A.I. Signal,\" \"Secret Space Program\") with counts (e.g., \"13,\" \"8,\" \"36\").  \n- A legend at the top lists these categories.  \n- Instructions at the bottom: *\"Drag to rotate · Scroll to zoom · Click any bubble for details\"*.  \n\n\n### 2. Right Section: Side Panel  \n- A dark-themed side panel with a **node title (\"QAnon\")** at the top, a red \"QANON\" tag, and a close (×) button.  \n- A section titled *\"WHAT THIS CONSPIRACY CLAIMS\"* with a detailed text description of QAnon’s narrative (e.g., Trump as a military recruit, the cabal as a satanic network, \"The Storm\" as a mass-arrest event).  \n- At the bottom: buttons for \"JSON\" and \"Markdown\" (with download icons) and an orange \"Copy shareable link\" button.  \n\n\n### Confirmations:  \n(1) **Yes**, there is a 3D graph on the left.  \n(2) **Yes**, there is a side panel on the right with a node title (\"QAnon\"), description (under \"WHAT THIS CONSPIRACY CLAIMS\"), and interactive buttons (JSON, Markdown, shareable link). While \"sources\" and \"related node chips\" are not explicitly visible in the description, the panel includes the core elements of a node detail view.  \n(3) **No layout issues** are apparent; the graph and side panel are clearly separated, with the graph occupying the left and the panel the right, and text/content is legible.  \n\n\nThe interface appears to be a tool for visualizing and exploring conspiracy theory claims, with the 3D graph showing relationships between ideas and the side panel providing context for the selected node (QAnon).",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783925400,
+  "id": "20260713144952e387f9dc84334d10",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260713144952e387f9dc84334d10",
+  "usage": {
+    "completion_tokens": 462,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1033,
+    "prompt_tokens_details": {
+      "cached_tokens": 5
+    },
+    "total_tokens": 1495
+  }
+}
