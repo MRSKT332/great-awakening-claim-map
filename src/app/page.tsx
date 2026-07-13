@@ -8,6 +8,7 @@ import Graph3D from "@/components/gam/Graph3D";
 import SidePanel from "@/components/gam/SidePanel";
 import TopBar from "@/components/gam/TopBar";
 import IntroModal from "@/components/gam/IntroModal";
+import ChatPanel from "@/components/gam/ChatPanel";
 import { ZoomIn, ZoomOut, Compass, MousePointerClick } from "lucide-react";
 
 function HomeInner() {
@@ -22,6 +23,8 @@ function HomeInner() {
     new Set(CATEGORIES.map((c) => c.id)),
   );
   const [showIntro, setShowIntro] = useState(!initialNode);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatNodeId, setChatNodeId] = useState<string | null>(null);
 
   // Filtered nodes/links based on active categories
   const filteredNodes = useMemo(
@@ -64,6 +67,7 @@ function HomeInner() {
         active={active}
         onToggleCategory={toggleCategory}
         onShowIntro={() => setShowIntro(true)}
+        onOpenChat={() => setChatOpen(true)}
       />
 
       {/* Disclaimer strip */}
@@ -98,6 +102,17 @@ function HomeInner() {
         node={selected}
         onClose={() => setSelected(null)}
         onSelect={(n) => setSelected(n)}
+        onAskAI={(n) => {
+          setChatNodeId(n.id);
+          setChatOpen(true);
+        }}
+      />
+
+      {/* AI Chat panel */}
+      <ChatPanel
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        currentNodeId={chatNodeId}
       />
 
       {/* Bottom-left hint */}

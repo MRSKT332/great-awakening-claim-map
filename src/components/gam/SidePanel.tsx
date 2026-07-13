@@ -4,15 +4,16 @@ import { useState } from "react";
 import type { GAMNode } from "@/lib/gam/types";
 import { CATEGORY_MAP } from "@/lib/gam/groups";
 import { NODE_MAP } from "@/lib/gam";
-import { X, Download, ExternalLink, Link2, Tag } from "lucide-react";
+import { X, Download, ExternalLink, Link2, Tag, Sparkles } from "lucide-react";
 
 interface Props {
   node: GAMNode | null;
   onClose: () => void;
   onSelect: (node: GAMNode) => void;
+  onAskAI?: (node: GAMNode) => void;
 }
 
-export default function SidePanel({ node, onClose, onSelect }: Props) {
+export default function SidePanel({ node, onClose, onSelect, onAskAI }: Props) {
   const [copied, setCopied] = useState(false);
 
   if (!node) return null;
@@ -103,25 +104,6 @@ export default function SidePanel({ node, onClose, onSelect }: Props) {
 
       {/* Scroll body */}
       <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
-        {/* Image */}
-        {node.image && (
-          <div className="rounded-lg overflow-hidden border border-[#262838] bg-black/30">
-            <img
-              src={node.image}
-              alt={node.label}
-              className="w-full max-h-[200px] object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-            {node.imageCredit && (
-              <div className="px-3 py-2 text-[10px] text-[#6a6b85] border-t border-[#262838]">
-                Image: {node.imageCredit}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Description */}
         <div>
           <h3 className="text-[10px] uppercase tracking-[0.15em] text-[#8a8ba3] font-semibold mb-2 flex items-center gap-1.5">
@@ -186,6 +168,15 @@ export default function SidePanel({ node, onClose, onSelect }: Props) {
 
       {/* Footer — download / share */}
       <div className="p-4 border-t border-[#262838] bg-black/30 space-y-2">
+        {onAskAI && (
+          <button
+            onClick={() => onAskAI(node)}
+            className="w-full flex items-center justify-center gap-1.5 text-[12px] font-medium py-2 px-3 rounded-md text-white transition hover:scale-[1.01]"
+            style={{ background: "linear-gradient(135deg, #8f6bff, #4affa0)" }}
+          >
+            <Sparkles size={13} /> Ask AI about this topic
+          </button>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={downloadJson}

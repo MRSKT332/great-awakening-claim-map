@@ -9,8 +9,6 @@ export const PLACES_NODES: GAMNode[] = [
     weight: 5,
     desc: "Within the narrative, the Moon is described as an artificial body placed into Earth orbit ~500,000 years ago by the Draco or Ancient Builder Race, hollow/honeycomb in structure, hosting the Lunar Operations Command (LOC), numerous ET bases on the far side ('heavily populated with ET bases'), crystalline towers, glass domes, and war-ruins from ancient conflicts. Said to function as a soul-catcher (per John Lear) and as a frequency-broadcast tower (per David Icke) to maintain the Saturn-Moon Matrix that traps humanity in 3D. SSP deep-lunar mining operations are described as revealing ancient civilizations and advanced technology.",
     links: ["loc", "artificial-moon", "moon-soul-catcher", "saturn-moon-matrix", "ancient-builder-race", "apollo-coverup", "secret-space-program", "moon-dark-side"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/FullMoon2010.jpg/1280px-FullMoon2010.jpg",
-    imageCredit: "NASA / Gregory H. Revera",
   },
   {
     id: "moon-dark-side",
@@ -51,8 +49,6 @@ export const PLACES_NODES: GAMNode[] = [
     weight: 5,
     desc: "Within the narrative, Mars is described as a former Earth-like planet destroyed ~500,000 years ago in an ancient nuclear war (the Mars Catastrophe), now hosting extensive ancient ruins (Cydonia pyramids, the Face, Pharaoh Sarcophagus), underground bases operated by the ICC using human slave labor, a 'slave colony' run via the 20-and-back program, jumpgate portals, inner-Mars civilizations, and a 'red' Mars that is in reality blue-skied (NASA color-manipulation claim). Satellite/rover blackouts are explained as NASA deliberately hiding evidence.",
     links: ["cydonia-pyramids", "face-on-mars", "mars-catastrophe", "icc", "icc-bases-mars", "jumpgate-portals", "ancient-builder-race", "mars-blue-skies", "nasa-coverup"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/1280px-OSIRIS_Mars_true_color.jpg",
-    imageCredit: "ESA / OSIRIS team",
   },
   {
     id: "mars-blue-skies",
@@ -77,8 +73,6 @@ export const PLACES_NODES: GAMNode[] = [
     weight: 4,
     desc: "Within the narrative, Saturn is described as: (a) the home of the Council of Saturn (Law of One) in a time-bubble sanctuary, (b) the site of Dark Fleet bases, (c) the location of the Ringmakers (Bergrun's EMVs manufacturing the rings), (d) the broadcast-source of the Saturn-Moon Matrix frequency (Icke), and (e) the location of the 'Hyperdimensional Hexagon' at the north pole — a stargate / energy vortex. Saturn is described as 'off-limits to the SSP Alliance' due to the Dark Fleet presence.",
     links: ["council-of-saturn", "dark-fleet", "ringmakers-saturn", "saturn-moon-matrix", "saturn-hexagon", "ancient-builder-race"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Saturn_-_August_11_2006_by_Cassini_Spacecraft.jpg/1280px-Saturn_-_August_11_2006_by_Cassini_Spacecraft.jpg",
-    imageCredit: "NASA / JPL / Space Science Institute",
   },
   {
     id: "saturn-hexagon",
@@ -117,8 +111,6 @@ export const PLACES_NODES: GAMNode[] = [
     weight: 4,
     desc: "Within the narrative, Antarctica is described as: (a) the location of the Nazi breakaway civilization's base (after WWII), (b) the site of pre-Adamite (Atlantean) ruins buried under the ice, (c) the location of Admiral Byrd's 1947 Operation Highjump 'defeat' by Nazi antigravity craft, (d) the off-limits zone guarded by the Antarctic Treaty (signed 1959 to keep the public out), and (e) the recent site of recovered ancient technology that the cabal is using for their breakaway plans.",
     links: ["nazi-breakaway", "operation-highjump", "atlantis", "ancient-builder-race", "deep-state", "michael-salla"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Antarctica_with_research_stations.jpg/1280px-Antarctica_with_research_stations.jpg",
-    imageCredit: "CIA / public domain",
   },
   {
     id: "underground-bases",

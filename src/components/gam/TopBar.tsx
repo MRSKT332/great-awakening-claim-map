@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, X, Info, Download, Github } from "lucide-react";
+import { Search, X, Info, Download, FileDown, Sparkles } from "lucide-react";
 import { CATEGORIES, NODES, LINKS } from "@/lib/gam";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   active: Set<string>;
   onToggleCategory: (id: string) => void;
   onShowIntro: () => void;
+  onOpenChat: () => void;
 }
 
 export default function TopBar({
@@ -18,6 +19,7 @@ export default function TopBar({
   active,
   onToggleCategory,
   onShowIntro,
+  onOpenChat,
 }: Props) {
   const [showLegend, setShowLegend] = useState(true);
 
@@ -86,6 +88,24 @@ export default function TopBar({
         </div>
 
         {/* Actions */}
+        <button
+          onClick={onOpenChat}
+          className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-md text-white transition hover:scale-[1.03]"
+          style={{ background: "linear-gradient(135deg, #8f6bff, #4affa0)" }}
+          title="Ask the AI guide about any topic"
+        >
+          <Sparkles size={13} />
+          <span className="hidden sm:inline">Ask AI</span>
+        </button>
+        <a
+          href="/great-awakening-map-poster.pdf"
+          download
+          className="w-8 h-8 rounded-md grid place-items-center text-[#8a8ba3] hover:text-white hover:bg-white/5 transition"
+          aria-label="Download original poster (PDF)"
+          title="Download original poster (PDF)"
+        >
+          <FileDown size={15} />
+        </a>
         <button
           onClick={onShowIntro}
           className="w-8 h-8 rounded-md grid place-items-center text-[#8a8ba3] hover:text-white hover:bg-white/5 transition"

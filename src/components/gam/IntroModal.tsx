@@ -90,6 +90,8 @@ export default function IntroModal({ open, onClose }: Props) {
               <li>• <b>Click any bubble</b> to open the side panel with the full description, sources, and related nodes</li>
               <li>• Use the <b>legend chips</b> at the top to filter by category</li>
               <li>• Use the <b>search bar</b> to find any topic by name</li>
+              <li>• Click <b>Ask AI</b> (top bar) to chat with an AI guide that has the full 284-node dataset as context</li>
+              <li>• Click <b>Download PDF</b> (top bar) to download the original poster</li>
               <li>• <b>Download</b> any node as JSON or Markdown, or the whole map as JSON</li>
               <li>• <b>Drag a node</b> to pin it in place · <b>click empty space</b> to release</li>
             </ul>

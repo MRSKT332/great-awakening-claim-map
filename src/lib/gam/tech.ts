@@ -12,8 +12,6 @@ export const TECH_NODES: GAMNode[] = [
       { label: "Nikola Tesla — Wikipedia", url: "https://en.wikipedia.org/wiki/Nikola_Tesla" },
     ],
     links: ["wireless-energy", "free-energy", "antigravity", "vibration-frequency", "electric-sun"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Tesla_circa_1890.jpeg/1280px-Tesla_circa_1890.jpeg",
-    imageCredit: "Wikipedia / public domain (Napoleon Sarony)",
   },
   {
     id: "wireless-energy",
