@@ -11,6 +11,7 @@ import { TECH_NODES } from "./tech";
 import { CABAL_NODES } from "./cabal";
 import { QANON_NODES } from "./qanon";
 import { NAZI_NODES } from "./nazi";
+import { applyMedia } from "./media";
 
 // Combine all node arrays
 export const ALL_NODES: GAMNode[] = [
@@ -30,11 +31,14 @@ export const ALL_NODES: GAMNode[] = [
 
 // Deduplicate by id (in case any two files share an id)
 const seen = new Set<string>();
-export const NODES: GAMNode[] = ALL_NODES.filter((n) => {
+const deduped = ALL_NODES.filter((n) => {
   if (seen.has(n.id)) return false;
   seen.add(n.id);
   return true;
 });
+
+// Apply media (images + YouTube) overrides
+export const NODES: GAMNode[] = applyMedia(deduped);
 
 export const NODE_MAP: Record<string, GAMNode> = Object.fromEntries(
   NODES.map((n) => [n.id, n]),

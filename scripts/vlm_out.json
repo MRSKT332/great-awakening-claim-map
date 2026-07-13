@@ -4,25 +4,25 @@
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "(1) Nodes are stable and readable (clear, static bubbles). (2) Yes, featured-topic chips (colored labels with counts) are visible at the top. (3) Yes, a reset-view button (circular icon) is at bottom-right. (4) No layout problems—nodes are organized, and UI elements are properly positioned.",
+        "content": "The bottom portion of the side panel has a \"Copy shareable link\" button. There is no YouTube video thumbnail with a red play button visible, and no video title is shown.  \n\nNo, no video thumbnail/title visible",
         "role": "assistant"
       }
     }
   ],
-  "created": 1783963733,
-  "id": "202607140128513f9b9102ca3b40df",
+  "created": 1783968421,
+  "id": "20260714024659d39167e641e84abc",
   "model": "glm-4.6v",
   "object": "chat.completion",
-  "request_id": "202607140128513f9b9102ca3b40df",
+  "request_id": "20260714024659d39167e641e84abc",
   "usage": {
-    "completion_tokens": 75,
+    "completion_tokens": 48,
     "completion_tokens_details": {
       "reasoning_tokens": 0
     },
-    "prompt_tokens": 1047,
+    "prompt_tokens": 1011,
     "prompt_tokens_details": {
-      "cached_tokens": 7
+      "cached_tokens": 5
     },
-    "total_tokens": 1122
+    "total_tokens": 1059
   }
 }

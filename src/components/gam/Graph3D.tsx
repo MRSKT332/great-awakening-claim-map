@@ -5,49 +5,48 @@ import type { GAMNode, GAMLink } from "@/lib/gam/types";
 import { CATEGORY_MAP } from "@/lib/gam/groups";
 
 interface Props {
-  nodes: GAMNode[];
+  nodes: (GAMNode & { x: number; y: number; z: number })[];
   links: GAMLink[];
   selectedId: string | null;
   activeCategories: Set<string>;
   searchQuery: string;
+  searchMatches: Set<string>; // node ids that match the current search
+  pathHighlight: Set<string> | null; // node ids on the path to highlight
   onSelect: (node: GAMNode) => void;
-  /** Imperative ref handle for parent to call resetView / focusNode. */
   onReady?: (api: GraphAPI) => void;
 }
 
 export interface GraphAPI {
   resetView: () => void;
   focusNode: (id: string) => void;
+  getNodePosition: (id: string) => { x: number; y: number; z: number } | null;
 }
 
-/**
- * Arkham-style 3D force-directed graph built on 3d-force-graph.
- *
- * - Each node is a colored sphere sized by `weight`.
- * - Nodes are connected by translucent lines.
- * - Clicking a node centers it and notifies the parent via onSelect.
- * - Category filtering and search dimming are supported via props.
- */
 export default function Graph3D({
   nodes,
   links,
   selectedId,
   activeCategories,
   searchQuery,
+  searchMatches,
+  pathHighlight,
   onSelect,
   onReady,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
-  // Keep latest props in refs so the init effect can stay mount-only
   const selectedRef = useRef(selectedId);
   const activeCatsRef = useRef(activeCategories);
   const searchRef = useRef(searchQuery);
+  const searchMatchesRef = useRef(searchMatches);
+  const pathRef = useRef(pathHighlight);
   const onSelectRef = useRef(onSelect);
 
   useEffect(() => { selectedRef.current = selectedId; }, [selectedId]);
   useEffect(() => { activeCatsRef.current = activeCategories; }, [activeCategories]);
   useEffect(() => { searchRef.current = searchQuery; }, [searchQuery]);
+  useEffect(() => { searchMatchesRef.current = searchMatches; }, [searchMatches]);
+  useEffect(() => { pathRef.current = pathHighlight; }, [pathHighlight]);
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
 
   useEffect(() => {
@@ -63,7 +62,7 @@ export default function Graph3D({
       const SpriteText = SpriteTextModule.default || SpriteTextModule;
       if (cancelled || !containerRef.current) return;
 
-      // Build the initial graph data
+      // Use the pre-positioned nodes directly — no physics
       const gNodes = nodes.map((n) => {
         const cat = CATEGORY_MAP[n.category];
         return {
@@ -72,7 +71,13 @@ export default function Graph3D({
           category: n.category,
           color: cat.color,
           weight: n.weight,
-          val: Math.max(1, n.weight * 1.6),
+          val: Math.max(1, n.weight * 1.5),
+          x: n.x,
+          y: n.y,
+          z: n.z,
+          fx: n.x,  // fix position — no movement
+          fy: n.y,
+          fz: n.z,
           __node: n,
         };
       });
@@ -82,25 +87,35 @@ export default function Graph3D({
         const sel = selectedRef.current;
         const cats = activeCatsRef.current;
         const q = searchRef.current;
+        const matches = searchMatchesRef.current;
+        const path = pathRef.current;
         if (sel && node.id === sel) return "#ffffff";
-        if (q && !node.label.toLowerCase().includes(q.toLowerCase())) return "rgba(70,72,95,0.4)";
-        if (!cats.has(node.category)) return "rgba(70,72,95,0.3)";
+        if (path && path.has(node.id)) return "#ffea00"; // path highlight = yellow
+        if (q) {
+          if (matches.has(node.id)) return node.color;
+          return "rgba(50,52,75,0.25)";
+        }
+        if (!cats.has(node.category)) return "rgba(50,52,75,0.2)";
         return node.color;
       };
 
       const computeLinkColor = (link: any) => {
         const sel = selectedRef.current;
-        if (sel && (link.source.id === sel || link.target.id === sel)) {
-          return "rgba(255,255,255,0.75)";
+        const path = pathRef.current;
+        if (path && path.has(link.source.id) && path.has(link.target.id)) {
+          return "rgba(255,234,0,0.9)"; // path links = bright yellow
         }
-        return "rgba(120,130,180,0.22)";
+        if (sel && (link.source.id === sel || link.target.id === sel)) {
+          return "rgba(255,255,255,0.85)"; // selected node links = white
+        }
+        return "rgba(140,150,200,0.45)"; // default links — much more visible than before
       };
 
       const graph = ForceGraph3D()(containerRef.current!)
         .graphData({ nodes: gNodes, links: gLinks })
         .backgroundColor("#06070d")
         .showNavInfo(false)
-        .nodeRelSize(4.5)
+        .nodeRelSize(5)
         .nodeColor(computeNodeColor)
         .nodeOpacity(0.95)
         .nodeLabel((node: any) => {
@@ -116,91 +131,76 @@ export default function Graph3D({
           sprite.borderRadius = 3;
           sprite.borderColor = cat.color;
           sprite.borderWidth = 0.6;
-          sprite.textHeight = 4.5;
-          sprite.position.y = -10;
+          sprite.textHeight = 5;
+          sprite.position.y = -11;
           return sprite;
         })
         .nodeThreeObjectExtend(true)
         .linkColor(computeLinkColor)
-        .linkWidth(0.4)
+        .linkWidth(1.0)          // was 0.4 — much thicker
+        .linkOpacity(0.6)        // was 0.22
         .linkDirectionalParticles(0)
         .linkDirectionalArrowLength(0)
-        .linkCurvature(0.06)
-        // STABILITY: settle fast and stay still
-        .cooldownTicks(120)
-        .d3AlphaDecay(0.08)   // higher = cools down faster
-        .d3VelocityDecay(0.55) // higher = more friction = less jitter
-        .warmupTicks(60)       // pre-compute layout before first render
+        .linkCurvature(0)
+        // NO simulation — positions are fixed
+        .d3Force("charge", null as any)
+        .d3Force("link", null as any)
+        .d3Force("center", null as any)
+        .d3Force("x", null as any)
+        .d3Force("y", null as any)
+        .d3Force("z", null as any)
+        .cooldownTicks(0)
         .onNodeClick((node: any) => {
           onSelectRef.current(node.__node as GAMNode);
-          const distance = 220;
+          const distance = 200;
           graph.cameraPosition(
             { x: node.x + distance, y: node.y + distance * 0.4, z: node.z + distance },
             { x: node.x, y: node.y, z: node.z },
-            900,
+            800,
           );
         })
+        .onNodeDrag((node: any) => {
+          // Allow dragging but don't release the fixed position
+        })
         .onNodeDragEnd((node: any) => {
-          // Pin node in place after drag
           node.fx = node.x;
           node.fy = node.y;
           node.fz = node.z;
-        })
-        .onEngineStop(() => {
-          // Fully freeze nodes once the simulation settles — no more drifting
-          const data = graph.graphData();
-          data.nodes.forEach((n: any) => {
-            n.vx = 0; n.vy = 0; n.vz = 0;
-          });
-        })
-        .onBackgroundClick(() => {
-          // Release all pinned nodes on background click
-          const data = graph.graphData();
-          data.nodes.forEach((n: any) => { n.fx = null; n.fy = null; n.fz = null; });
         });
-
-      // GENTLE forces for 284 nodes — minimal floating
-      const charge = graph.d3Force("charge");
-      if (charge) charge.strength(-90).distanceMax(320);  // was -220, way too strong
-      const link = graph.d3Force("link");
-      if (link) { link.distance(38); link.strength(0.18); }
-      const center = graph.d3Force("center");
-      if (center) center.strength(0.003);  // very gentle pull to center
-      // Remove the default x/y/z forces that cause drifting
-      graph.d3Force("x", null);
-      graph.d3Force("y", null);
-      graph.d3Force("z", null);
 
       graphRef.current = graph;
 
-      // Initial camera position — tilted top-down for a nice overview
-      graph.cameraPosition({ x: 0, y: -150, z: 700 });
+      // Initial camera — top-down overview
+      graph.cameraPosition({ x: 0, y: 0, z: 750 });
 
-      // Expose API to parent for reset / focus controls
       if (onReady) {
         onReady({
           resetView: () => {
-            graph.cameraPosition({ x: 0, y: -150, z: 700 }, { x: 0, y: 0, z: 0 }, 800);
+            graph.cameraPosition({ x: 0, y: 0, z: 750 }, { x: 0, y: 0, z: 0 }, 800);
           },
           focusNode: (id: string) => {
             const data = graph.graphData();
             const target = data.nodes.find((n: any) => n.id === id);
             if (!target) return;
-            const distance = 220;
+            const distance = 200;
             graph.cameraPosition(
               { x: target.x + distance, y: target.y + distance * 0.4, z: target.z + distance },
               { x: target.x, y: target.y, z: target.z },
-              900,
+              800,
             );
+          },
+          getNodePosition: (id: string) => {
+            const data = graph.graphData();
+            const target = data.nodes.find((n: any) => n.id === id);
+            if (!target) return null;
+            return { x: target.x, y: target.y, z: target.z };
           },
         });
       }
 
-      // Re-render colors when props change (without rebuilding the graph)
       (graph as any).__refreshColors = () => {
         graph.nodeColor(computeNodeColor);
         graph.linkColor(computeLinkColor);
-        graph.nodeRelSize(4.5);
       };
     })();
 
@@ -217,13 +217,12 @@ export default function Graph3D({
     };
   }, []);
 
-  // Refresh colors when selection / filter / search changes
   useEffect(() => {
     const graph = graphRef.current;
     if (graph && (graph as any).__refreshColors) {
       (graph as any).__refreshColors();
     }
-  }, [selectedId, activeCategories, searchQuery]);
+  }, [selectedId, activeCategories, searchQuery, searchMatches, pathHighlight]);
 
   return (
     <div

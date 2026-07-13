@@ -35,6 +35,12 @@ export interface GAMNode {
   sources?: { label: string; url: string }[];
   /** Related node ids. */
   links?: string[];
+  /** Optional public-domain image URL (Wikimedia / NASA). */
+  image?: string;
+  /** Image credit/attribution. */
+  imageCredit?: string;
+  /** Optional YouTube video ID for an embedded relevant video. */
+  youtubeId?: string;
 }
 
 export interface GAMLink {

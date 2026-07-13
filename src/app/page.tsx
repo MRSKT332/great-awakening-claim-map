@@ -3,15 +3,19 @@
 import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { NODES, LINKS, CATEGORIES, NODE_MAP, CATEGORY_MAP } from "@/lib/gam";
+import { POSITIONED_NODES, POSITIONED_MAP } from "@/lib/gam/layout";
 import type { GAMNode } from "@/lib/gam/types";
 import Graph3D, { type GraphAPI } from "@/components/gam/Graph3D";
 import SidePanel from "@/components/gam/SidePanel";
 import TopBar from "@/components/gam/TopBar";
 import IntroModal from "@/components/gam/IntroModal";
 import ChatPanel from "@/components/gam/ChatPanel";
-import { Compass, MousePointerClick, RotateCcw, Sparkles, X } from "lucide-react";
+import StudyOrderDrawer from "@/components/gam/StudyOrderDrawer";
+import GlossaryDrawer from "@/components/gam/GlossaryDrawer";
+import PathFinderDrawer from "@/components/gam/PathFinderDrawer";
+import BookmarksDrawer from "@/components/gam/BookmarksDrawer";
+import { Compass, MousePointerClick, RotateCcw } from "lucide-react";
 
-// Featured topics for first-time users — quick-access chips
 const FEATURED_IDS = [
   "great-awakening",
   "qanon",
@@ -38,13 +42,55 @@ function HomeInner() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatNodeId, setChatNodeId] = useState<string | null>(null);
   const [graphReady, setGraphReady] = useState(false);
+  const [studyOpen, setStudyOpen] = useState(false);
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [pathFinderOpen, setPathFinderOpen] = useState(false);
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [pathHighlight, setPathHighlight] = useState<Set<string> | null>(null);
+  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
 
   const graphApiRef = useRef<GraphAPI | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Load bookmarks from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("gam-bookmarks");
+      if (stored) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setBookmarks(new Set(JSON.parse(stored)));
+      }
+    } catch {}
+  }, []);
+
+  const toggleBookmark = (id: string) => {
+    setBookmarks((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try { localStorage.setItem("gam-bookmarks", JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  };
+
+  // Compute search matches (label + description + related)
+  const searchMatches = useMemo(() => {
+    if (!search.trim()) return new Set<string>();
+    const q = search.toLowerCase();
+    const matches = new Set<string>();
+    NODES.forEach((n) => {
+      if (n.label.toLowerCase().includes(q)) { matches.add(n.id); return; }
+      if (n.desc.toLowerCase().includes(q)) { matches.add(n.id); return; }
+      const relatedMatch = (n.links || []).some((id) =>
+        NODE_MAP[id]?.label.toLowerCase().includes(q),
+      );
+      if (relatedMatch) matches.add(n.id);
+    });
+    return matches;
+  }, [search]);
 
   // Filtered nodes/links based on active categories
   const filteredNodes = useMemo(
-    () => NODES.filter((n) => active.has(n.category)),
+    () => POSITIONED_NODES.filter((n) => active.has(n.category)),
     [active],
   );
   const filteredLinks = useMemo(
@@ -78,13 +124,16 @@ function HomeInner() {
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input/textarea
       const tag = (e.target as HTMLElement)?.tagName;
-      const isInput = tag === "INPUT" || tag === "TEXTAREA";
+      const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
       if (isInput && e.key !== "Escape") return;
 
       if (e.key === "Escape") {
         if (chatOpen) { setChatOpen(false); return; }
+        if (studyOpen) { setStudyOpen(false); return; }
+        if (glossaryOpen) { setGlossaryOpen(false); return; }
+        if (pathFinderOpen) { setPathFinderOpen(false); return; }
+        if (bookmarksOpen) { setBookmarksOpen(false); return; }
         if (selected) { setSelected(null); return; }
         if (showIntro) { setShowIntro(false); return; }
       }
@@ -102,7 +151,7 @@ function HomeInner() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [chatOpen, selected, showIntro]);
+  }, [chatOpen, studyOpen, glossaryOpen, pathFinderOpen, bookmarksOpen, selected, showIntro]);
 
   const selectNode = (n: GAMNode | null) => {
     setSelected(n);
@@ -118,6 +167,12 @@ function HomeInner() {
         onToggleCategory={toggleCategory}
         onShowIntro={() => setShowIntro(true)}
         onOpenChat={() => setChatOpen(true)}
+        onOpenStudy={() => setStudyOpen(true)}
+        onOpenGlossary={() => setGlossaryOpen(true)}
+        onOpenPathFinder={() => setPathFinderOpen(true)}
+        onOpenBookmarks={() => setBookmarksOpen(true)}
+        bookmarkCount={bookmarks.size}
+        onSelect={selectNode}
       />
 
       {/* Disclaimer strip */}
@@ -142,6 +197,8 @@ function HomeInner() {
             selectedId={selected?.id || null}
             activeCategories={active}
             searchQuery={search}
+            searchMatches={searchMatches}
+            pathHighlight={pathHighlight}
             onSelect={selectNode}
             onReady={(api) => {
               graphApiRef.current = api;
@@ -151,7 +208,7 @@ function HomeInner() {
         </Suspense>
       </div>
 
-      {/* Featured topics — quick access row (only when nothing selected and no search) */}
+      {/* Featured topics */}
       {!selected && !search && graphReady && (
         <div
           className="fixed left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-1.5 px-3 max-w-[90vw]"
@@ -193,6 +250,25 @@ function HomeInner() {
           setChatNodeId(n.id);
           setChatOpen(true);
         }}
+        bookmarks={bookmarks}
+        onToggleBookmark={toggleBookmark}
+      />
+
+      {/* Drawers */}
+      <StudyOrderDrawer open={studyOpen} onClose={() => setStudyOpen(false)} onSelect={selectNode} />
+      <GlossaryDrawer open={glossaryOpen} onClose={() => setGlossaryOpen(false)} />
+      <PathFinderDrawer
+        open={pathFinderOpen}
+        onClose={() => setPathFinderOpen(false)}
+        onSelect={selectNode}
+        onHighlightPath={setPathHighlight}
+      />
+      <BookmarksDrawer
+        open={bookmarksOpen}
+        onClose={() => setBookmarksOpen(false)}
+        bookmarks={bookmarks}
+        onToggleBookmark={toggleBookmark}
+        onSelect={selectNode}
       />
 
       {/* AI Chat panel */}
@@ -202,10 +278,8 @@ function HomeInner() {
         currentNodeId={chatNodeId}
       />
 
-      {/* Bottom-left hint — collapsible */}
-      <div
-        className="fixed bottom-4 left-4 z-10 px-3 py-2 rounded-lg border border-[#262838] bg-[#14151f]/85 backdrop-blur text-[11px] text-[#9a9bb3] flex items-center gap-2"
-      >
+      {/* Bottom-left hint */}
+      <div className="fixed bottom-4 left-4 z-10 px-3 py-2 rounded-lg border border-[#262838] bg-[#14151f]/85 backdrop-blur text-[11px] text-[#9a9bb3] flex items-center gap-2">
         <MousePointerClick size={13} className="shrink-0 text-[#ff6b4a]" />
         <span className="hidden sm:inline">Drag to rotate · Scroll to zoom · <kbd className="px-1 py-0.5 rounded bg-[#262838] text-[9px]">/</kbd> search · <kbd className="px-1 py-0.5 rounded bg-[#262838] text-[9px]">C</kbd> chat · <kbd className="px-1 py-0.5 rounded bg-[#262838] text-[9px]">Esc</kbd> close</span>
         <span className="sm:hidden">Tap a bubble · Pinch to zoom</span>
@@ -232,7 +306,6 @@ function HomeInner() {
         </a>
       </div>
 
-      {/* Intro modal */}
       <IntroModal open={showIntro} onClose={() => setShowIntro(false)} />
     </main>
   );
