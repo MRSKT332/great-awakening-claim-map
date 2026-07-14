@@ -169,12 +169,16 @@ export default function Graph3D({
       // Initial camera — top-down overview
       graph.cameraPosition({ x: 0, y: 0, z: 750 });
 
-      // WARM UP THE RAYCASTER — 3d-force-graph's internal raycaster needs a
-      // pointermove event to establish an initial mouse position. Without this,
-      // the very first click on a node misses (raycaster uses default 0,0 coords)
-      // and the user has to click twice. Dispatching a synthetic pointermove
-      // at the center of the canvas gives the raycaster a valid starting
-      // position so the first click works immediately.
+      // ROBUST RAYCASTER WARM-UP — 3d-force-graph's internal raycaster only
+      // updates its mouse position on pointermove. If the user clicks without
+      // first moving the mouse (e.g. page loads, user immediately clicks a
+      // bubble), the raycaster has stale/zero coordinates and the click misses.
+      // We fix this in two ways:
+      //  (a) dispatch a synthetic pointermove at center after init
+      //  (b) intercept ALL pointerdown events on the canvas and dispatch a
+      //      pointermove at the same coordinates BEFORE the click is processed.
+      //      This guarantees the raycaster always has the correct mouse position
+      //      when a click fires, so the first click always hits the right node.
       setTimeout(() => {
         if (!containerRef.current) return;
         const canvas = containerRef.current.querySelector('canvas');
@@ -188,6 +192,30 @@ export default function Graph3D({
         });
         canvas.dispatchEvent(moveEvent);
       }, 100);
+
+      // Intercept pointerdown: fire a pointermove at the same coordinates
+      // BEFORE the click event, so the raycaster is always fresh.
+      const canvas = containerRef.current.querySelector('canvas');
+      if (canvas) {
+        const primingHandler = (e: PointerEvent) => {
+          // Dispatch a pointermove at the exact same coordinates right before
+          // the click fires. This ensures the raycaster has the current mouse
+          // position, so the node-hit-test succeeds on the first click.
+          const moveEvent = new PointerEvent('pointermove', {
+            bubbles: true,
+            cancelable: true,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            pointerId: e.pointerId,
+            pointerType: e.pointerType,
+          });
+          canvas.dispatchEvent(moveEvent);
+        };
+        canvas.addEventListener('pointerdown', primingHandler, { capture: true });
+        // Store for cleanup
+        (graph as any).__primingHandler = primingHandler;
+        (graph as any).__primingCanvas = canvas;
+      }
 
       if (onReady) {
         onReady({
@@ -225,7 +253,13 @@ export default function Graph3D({
 
     return () => {
       cancelled = true;
+      // Clean up the priming handler
       if (graphRef.current) {
+        const handler = (graphRef.current as any).__primingHandler;
+        const primingCanvas = (graphRef.current as any).__primingCanvas;
+        if (handler && primingCanvas) {
+          primingCanvas.removeEventListener('pointerdown', handler, { capture: true } as any);
+        }
         try { graphRef.current._destructor(); } catch {}
         graphRef.current = null;
       }
