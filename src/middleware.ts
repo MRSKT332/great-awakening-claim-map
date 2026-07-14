@@ -54,10 +54,11 @@ const SUSPICIOUS_UA = [
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ── Block sensitive paths ──
+  // ── Block sensitive paths (with and without trailing slash) ──
+  // Normalize by stripping trailing slash for comparison
+  const normalizedPath = pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
   for (const blocked of BLOCKED_PATHS) {
-    if (pathname === blocked || pathname.startsWith(blocked + "/")) {
-      // Return a plain 404 — don't reveal the file exists
+    if (normalizedPath === blocked || normalizedPath.startsWith(blocked + "/")) {
       return new NextResponse("Not Found", { status: 404 });
     }
   }
