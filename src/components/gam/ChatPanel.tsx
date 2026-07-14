@@ -128,14 +128,17 @@ export default function ChatPanel({ open, onClose, currentNodeId }: Props) {
     ];
 
     try {
+      // Use NON-streaming — Pollinations streaming is unreliable (returns
+      // fragments out of order, often incomplete). Non-streaming gives us
+      // the complete response reliably. We simulate a typing effect client-side
+      // for good UX during the wait.
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages, stream: true }),
+        body: JSON.stringify({ messages: apiMessages, stream: false }),
       });
 
       if (!res.ok) {
-        // Handle rate limiting gracefully
         if (res.status === 429) {
           let retryAfter = "a moment";
           try {
@@ -150,63 +153,44 @@ export default function ChatPanel({ open, onClose, currentNodeId }: Props) {
         throw new Error("The AI service is busy. Please try again.");
       }
 
-      // Phase 3: Stream the response
-      setPhase("streaming");
+      const data = await res.json();
+      const fullContent = data.choices?.[0]?.message?.content || "";
 
-      // Add an empty assistant message that we'll fill as chunks arrive
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response stream");
-
-      const decoder = new TextDecoder();
-      let fullContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        // Parse SSE chunks — Pollinations sends OpenAI-compatible SSE
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content;
-              if (delta) {
-                fullContent += delta;
-                // Update the last message with the accumulated content
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    role: "assistant",
-                    content: fullContent,
-                  };
-                  return updated;
-                });
-              }
-            } catch {
-              // Skip non-JSON lines
-            }
-          }
-        }
+      if (!fullContent) {
+        throw new Error("The AI returned an empty response. Please try again.");
       }
 
-      // If we got no content, show a fallback
-      if (!fullContent) {
+      // Phase 3: Simulate streaming by revealing the response progressively
+      setPhase("streaming");
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      // Reveal the content in chunks for a smooth typing effect
+      const words = fullContent.split(" ");
+      const chunkSize = Math.max(2, Math.ceil(words.length / 60)); // ~60 updates total
+      let revealed = "";
+
+      for (let i = 0; i < words.length; i += chunkSize) {
+        const chunk = words.slice(i, i + chunkSize).join(" ");
+        revealed += (i > 0 ? " " : "") + chunk;
+        const currentRevealed = revealed;
         setMessages((prev) => {
           const updated = [...prev];
           updated[updated.length - 1] = {
             role: "assistant",
-            content: "I couldn't generate a response. Please try rephrasing your question.",
-            isError: true,
+            content: currentRevealed,
           };
           return updated;
         });
+        // Small delay between chunks — ~25ms for smooth typing
+        await new Promise((r) => setTimeout(r, 25));
       }
+
+      // Ensure full content is shown
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: "assistant", content: fullContent };
+        return updated;
+      });
 
       setPhase("done");
       setTimeout(() => setPhase("idle"), 300);

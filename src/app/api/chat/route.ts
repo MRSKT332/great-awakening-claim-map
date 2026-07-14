@@ -92,14 +92,14 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Forward to Pollinations ──
-    // Use "openai-fast" — a fast non-reasoning model that doesn't burn tokens
-    // on internal chain-of-thought. The "openai" model (gpt-oss-20b) spends
-    // its entire 1500-token budget on reasoning and never produces an answer.
+    // Pollinations free tier now only returns gpt-oss-20b regardless of model
+    // parameter. This model spends tokens on internal "reasoning" so we give
+    // it a generous max_tokens to ensure the actual answer completes.
     const pollinationsBody: Record<string, unknown> = {
-      model: "openai-fast",
+      model: "openai",
       messages: sanitizedMessages,
       temperature: 0.7,
-      max_tokens: 800,  // explicit cap — prevents length-cutoff issues
+      max_tokens: 2000,
     };
 
     if (stream) {
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 45_000); // 45s hard timeout
+    const timeout = setTimeout(() => controller.abort(), 60_000); // 60s hard timeout
 
     try {
       const pollinationsRes = await fetch("https://text.pollinations.ai/openai", {
