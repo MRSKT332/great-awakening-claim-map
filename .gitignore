@@ -43,7 +43,6 @@ yarn-error.log*
 next-env.d.ts
 local-*
 .claude
-.z-ai-config
 *.log
 dev.log
 dev.out.log
@@ -55,3 +54,15 @@ server.log
 /skills/
 # Dev screenshots
 scripts/*.png
+
+# Dev scaffold (not part of the app)
+/.zscripts/
+/download/
+/examples/
+/db/
+/upload/
+/skills/
+/bun.lock
+
+# Dev scripts and screenshots
+/scripts/

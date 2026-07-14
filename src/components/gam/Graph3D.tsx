@@ -192,17 +192,20 @@ export default function Graph3D({
       if (onReady) {
         onReady({
           resetView: () => {
-            graph.cameraPosition({ x: 0, y: 0, z: 750 }, { x: 0, y: 0, z: 0 }, 800);
+            graph.cameraPosition({ x: 0, y: 0, z: 750 }, { x: 0, y: 0, z: 0 }, 600);
           },
           focusNode: (id: string) => {
             const data = graph.graphData();
             const target = data.nodes.find((n: any) => n.id === id);
             if (!target) return;
             const distance = 200;
+            // Shorter duration (400ms) so consecutive clicks don't overlap
+            // animations. The 3d-force-graph library handles cancellation
+            // internally when a new cameraPosition is called.
             graph.cameraPosition(
               { x: target.x + distance, y: target.y + distance * 0.4, z: target.z + distance },
               { x: target.x, y: target.y, z: target.z },
-              800,
+              400,
             );
           },
           getNodePosition: (id: string) => {

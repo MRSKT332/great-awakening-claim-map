@@ -120,15 +120,16 @@ export default function TopBar({
           <span className="hidden sm:inline">Ask AI</span>
         </button>
 
-        {/* PDF download */}
+        {/* PDF download — prominent labeled button */}
         <a
           href="/great-awakening-map-poster.pdf"
           download
-          className="w-8 h-8 rounded-md grid place-items-center text-[#8a8ba3] hover:text-white hover:bg-white/5 transition shrink-0"
-          aria-label="Download original poster (PDF)"
-          title="Download original poster (PDF)"
+          className="flex items-center gap-1.5 text-[11.5px] font-medium px-2.5 sm:px-3 py-1.5 rounded-md border border-[#ff6b4a]/40 text-[#ff6b4a] hover:bg-[#ff6b4a]/10 transition shrink-0"
+          aria-label="Download the original Great Awakening Map poster (PDF)"
+          title="Download the original poster (PDF, 7.5 MB)"
         >
-          <FileDown size={15} />
+          <FileDown size={14} />
+          <span className="hidden md:inline">Download Map</span>
         </a>
 
         <button
