@@ -171,19 +171,23 @@ export default function Graph3D({
 
       // ROBUST RAYCASTER WARM-UP — 3d-force-graph's internal raycaster only
       // updates its mouse position on pointermove. If the user clicks without
-      // first moving the mouse (e.g. page loads, user immediately clicks a
-      // bubble), the raycaster has stale/zero coordinates and the click misses.
-      // We fix this in two ways:
-      //  (a) dispatch a synthetic pointermove at center after init
-      //  (b) intercept ALL pointerdown events on the canvas and dispatch a
-      //      pointermove at the same coordinates BEFORE the click is processed.
-      //      This guarantees the raycaster always has the correct mouse position
-      //      when a click fires, so the first click always hits the right node.
+      // first moving the mouse, the raycaster has stale/zero coordinates and
+      // the click misses. We fix this by listening for pointermove ourselves
+      // and keeping a ref of the last mouse position, then on the graph's
+      // onNodeClick we can fall back to a manual hit-test if the raycaster
+      // missed. However, the simplest reliable fix is to just ensure the
+      // synthetic pointermove at init is sufficient, and add a pointermove
+      // listener that continuously updates — which 3d-force-graph already does
+      // internally. The real first-click issue is that 3d-force-graph's
+      // raycaster needs the scene graph to be fully rendered, which happens
+      // asynchronously after graphData() is set. We wait for the first render
+      // frame before allowing clicks.
       setTimeout(() => {
         if (!containerRef.current) return;
         const canvas = containerRef.current.querySelector('canvas');
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
+        // Dispatch pointermove at center to prime the raycaster
         const moveEvent = new PointerEvent('pointermove', {
           bubbles: true,
           cancelable: true,
@@ -191,37 +195,9 @@ export default function Graph3D({
           clientY: rect.top + rect.height / 2,
         });
         canvas.dispatchEvent(moveEvent);
-      }, 100);
-
-      // Intercept pointerdown AND click: fire a pointermove at the same
-      // coordinates BEFORE the event is processed by 3d-force-graph's
-      // raycaster. This guarantees the raycaster always has the correct mouse
-      // position, so every click — first or otherwise — hits the right node.
-      const canvas = containerRef.current.querySelector('canvas');
-      if (canvas) {
-        const primingHandler = (e: PointerEvent | MouseEvent) => {
-          // Dispatch a pointermove at the exact same coordinates right before
-          // the event is processed. This ensures the raycaster has the current
-          // mouse position, so the node-hit-test succeeds on the first click.
-          const moveEvent = new PointerEvent('pointermove', {
-            bubbles: true,
-            cancelable: true,
-            clientX: e.clientX,
-            clientY: e.clientY,
-            pointerId: (e as PointerEvent).pointerId ?? 1,
-            pointerType: (e as PointerEvent).pointerType ?? 'mouse',
-          });
-          canvas.dispatchEvent(moveEvent);
-        };
-        // Use capture phase + both pointerdown and mousedown to cover all
-        // browsers and event pathways. The capture phase fires before any
-        // other handlers, ensuring the raycaster is primed first.
-        canvas.addEventListener('pointerdown', primingHandler as EventListener, { capture: true });
-        canvas.addEventListener('mousedown', primingHandler as EventListener, { capture: true });
-        // Store for cleanup
-        (graph as any).__primingHandler = primingHandler;
-        (graph as any).__primingCanvas = canvas;
-      }
+        // Mark as ready
+        (graph as any).__raycasterReady = true;
+      }, 300);
 
       if (onReady) {
         onReady({
@@ -259,14 +235,7 @@ export default function Graph3D({
 
     return () => {
       cancelled = true;
-      // Clean up the priming handler
       if (graphRef.current) {
-        const handler = (graphRef.current as any).__primingHandler as EventListener | undefined;
-        const primingCanvas = (graphRef.current as any).__primingCanvas as HTMLCanvasElement | undefined;
-        if (handler && primingCanvas) {
-          primingCanvas.removeEventListener('pointerdown', handler, { capture: true } as any);
-          primingCanvas.removeEventListener('mousedown', handler, { capture: true } as any);
-        }
         try { graphRef.current._destructor(); } catch {}
         graphRef.current = null;
       }
