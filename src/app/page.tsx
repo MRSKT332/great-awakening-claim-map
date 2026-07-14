@@ -208,13 +208,13 @@ function HomeInner() {
         </Suspense>
       </div>
 
-      {/* Featured topics */}
+      {/* Featured topics — container is click-through so it doesn't block graph clicks */}
       {!selected && !search && graphReady && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-1.5 px-3 max-w-[90vw]"
+          className="fixed left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-1.5 px-3 max-w-[90vw] pointer-events-none"
           style={{ bottom: "72px" }}
         >
-          <span className="text-[10px] uppercase tracking-wider text-[#6a6b85] mr-1 hidden sm:inline">Start here:</span>
+          <span className="text-[10px] uppercase tracking-wider text-[#6a6b85] mr-1 hidden sm:inline pointer-events-none">Start here:</span>
           {FEATURED_IDS.map((id) => {
             const node = NODE_MAP[id];
             if (!node) return null;
@@ -223,7 +223,7 @@ function HomeInner() {
               <button
                 key={id}
                 onClick={() => selectNode(node)}
-                className="text-[11.5px] px-2.5 py-1.5 rounded-full border backdrop-blur transition hover:scale-[1.05]"
+                className="text-[11.5px] px-2.5 py-1.5 rounded-full border backdrop-blur transition hover:scale-[1.05] pointer-events-auto"
                 style={{
                   background: `${cat.color}18`,
                   borderColor: `${cat.color}55`,

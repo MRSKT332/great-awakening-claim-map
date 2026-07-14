@@ -151,13 +151,9 @@ export default function Graph3D({
         .d3Force("z", null as any)
         .cooldownTicks(0)
         .onNodeClick((node: any) => {
+          // Camera animation is handled by the parent's focusNode() —
+          // don't call cameraPosition here to avoid double-animation conflicts.
           onSelectRef.current(node.__node as GAMNode);
-          const distance = 200;
-          graph.cameraPosition(
-            { x: node.x + distance, y: node.y + distance * 0.4, z: node.z + distance },
-            { x: node.x, y: node.y, z: node.z },
-            800,
-          );
         })
         .onNodeDrag((node: any) => {
           // Allow dragging but don't release the fixed position
@@ -172,6 +168,26 @@ export default function Graph3D({
 
       // Initial camera — top-down overview
       graph.cameraPosition({ x: 0, y: 0, z: 750 });
+
+      // WARM UP THE RAYCASTER — 3d-force-graph's internal raycaster needs a
+      // pointermove event to establish an initial mouse position. Without this,
+      // the very first click on a node misses (raycaster uses default 0,0 coords)
+      // and the user has to click twice. Dispatching a synthetic pointermove
+      // at the center of the canvas gives the raycaster a valid starting
+      // position so the first click works immediately.
+      setTimeout(() => {
+        if (!containerRef.current) return;
+        const canvas = containerRef.current.querySelector('canvas');
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const moveEvent = new PointerEvent('pointermove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + rect.height / 2,
+        });
+        canvas.dispatchEvent(moveEvent);
+      }, 100);
 
       if (onReady) {
         onReady({
