@@ -60,6 +60,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  trailingSlash: false,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "upload.wikimedia.org" },

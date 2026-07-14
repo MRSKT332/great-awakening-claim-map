@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       model: "openai",
       messages: sanitizedMessages,
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4000,
     };
 
     if (stream) {
